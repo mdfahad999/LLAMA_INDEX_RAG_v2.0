@@ -29,6 +29,7 @@ from llama_index import (
     ServiceContext,
     Document,
 )
+from llama_index import Prompt
 import torch
 from typing import List, cast, Optional
 from llama_index import SimpleDirectoryReader
@@ -206,6 +207,13 @@ class LLama_Index_qna:
             
         queryQuestion = "<s>[INST] You are a AI Assistant who is specialized on answering questions from PDF Documents. Answer questions in a positive, helpful and empathetic way. Answer the following question: " + questionText.strip() + " [/INST]"
         return queryQuestion
+    
+    def qna_template(self):
+
+        print('Entered!!!')
+        template = ("You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, just say that you don't know. Use three sentences maximum and keep the answer concise.\nQuestion: {query_str} \nContext: {context_str} \nAnswer:")
+        qa_template = Prompt(template)
+        return qa_template
     # @classmethod
     def qna(self,vectorstore:str,Questions:list=None):
         print(Text.BOLD_START+Text.RED +'Entered into QNA !!!!!!!!!!!!!!' +Text.END )
@@ -219,7 +227,8 @@ class LLama_Index_qna:
             index=ChromaDBVectorizer().load_from_index()     
         else:    
             index =self.creating_index()
-        query_engine = index.as_query_engine(k=6)
+        qa_template=self.qna_template()     
+        query_engine = index.as_query_engine(k=6,qa_template=qa_template)
         print(Text.BOLD_START+Text.RED +'query_engine!@@@@@::' +Text.END )
         print('',query_engine)
         if not isinstance(Questions,list):
