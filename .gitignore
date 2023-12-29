@@ -5,6 +5,7 @@ Models/
 faiss/
 storage/
 storagess/
+chroma/
 .idea/
 # Byte-compiled / optimized / DLL files
 

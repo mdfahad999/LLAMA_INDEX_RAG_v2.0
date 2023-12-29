@@ -47,7 +47,8 @@ from llama_index.llms import LlamaCPP
 from llama_index.llms.llama_utils import messages_to_prompt, completion_to_prompt
 from faiss_vector_store import *
 from llama_index import set_global_service_context
-
+from langchain import HuggingFacePipeline
+from transformers import BitsAndBytesConfig, AutoModelForCausalLM, AutoTokenizer, GenerationConfig, pipeline
 from chroma_vector_store import *
 # path='./storage'
 # try:
@@ -87,7 +88,7 @@ class LLama_Index_qna:
         self.embd_id = embmodel_id
         self.syn_model_id = synthesis_model_id
         self.device=torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        self.synthesis_model = self.synthesis_model_fn()
+        self.synthesis_model = self.synthesis_model_fn(llm_load='llamacpp')
         self.embedding_model = self.embedding_model_fn()
         #self.text_splitter = SentenceSplitter(chunk_size=1024, chunk_overlap=128)
         self.node_parser = self.node_parser_func()
@@ -97,20 +98,60 @@ class LLama_Index_qna:
         self.service_context = ServiceContext.from_defaults(llm=self.synthesis_model,embed_model=self.embedding_model,node_parser=self.node_parser,prompt_helper=self.prompt_helper)
 #        self.service_context = ServiceContext.from_defaults(llm=self.synthesis_model,embed_model=self.embedding_model,node_parser=self.node_parser,prompt_helper=self.prompt_helper,text_splitter=self.text_splitter)
         self.set_global_service_context = set_global_service_context(self.service_context)
-    def synthesis_model_fn(self):
-            llm = LlamaCPP(
-                model_url=None,
-                model_path=self.syn_model_id,
-                temperature=0.01,
-                max_new_tokens=1024,
-                context_window=8192,
-                generate_kwargs={},
-                model_kwargs={"n_gpu_layers": 5},
-                messages_to_prompt=messages_to_prompt,
-                completion_to_prompt=completion_to_prompt,
-                verbose=True
-            )
-            return llm
+    def synthesis_model_fn(self,llm_load:str=None):
+            if llm_load =='llamacpp':
+                llm = LlamaCPP(
+                    model_url=None,
+                    model_path=self.syn_model_id,
+                    temperature=0.01,
+                    max_new_tokens=1024,
+                    context_window=8192,
+                    generate_kwargs={},
+                    model_kwargs={"n_gpu_layers": 5},
+                    messages_to_prompt=messages_to_prompt,
+                    completion_to_prompt=completion_to_prompt,
+                    verbose=True
+                )
+                return llm
+            elif llm_load== 'huggingface':
+                MODEL_NAME = "mistralai/Mistral-7B-Instruct-v0.1"
+
+                quantization_config = BitsAndBytesConfig(
+                    load_in_4bit=True,
+                    bnb_4bit_compute_dtype=torch.bfloat16,
+                    bnb_4bit_quant_type="nf4",
+                    bnb_4bit_use_double_quant=True,
+                )
+
+                tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_fast=True)
+                tokenizer.pad_token = tokenizer.eos_token
+
+                model = AutoModelForCausalLM.from_pretrained(
+                    MODEL_NAME, torch_dtype=torch.bfloat16,
+                    trust_remote_code=True,
+                    device_map=self.device,
+                    quantization_config=quantization_config
+                )
+
+                generation_config = GenerationConfig.from_pretrained(MODEL_NAME)
+                generation_config.max_new_tokens = 1024
+                generation_config.temperature = 0.0001
+                generation_config.top_p = 0.95
+                generation_config.do_sample = True
+                generation_config.repetition_penalty = 1.15
+
+                pipeline = pipeline(
+                    "text-generation",
+                    model=model,
+                    tokenizer=tokenizer,
+                    return_full_text=True,
+                    generation_config=generation_config,
+                )
+                llm = HuggingFacePipeline(
+                    pipeline=pipeline,
+                    )
+                
+                return llm    
     def embedding_model_fn(self):
         embed_model = HuggingFaceEmbedding(model_name=self.embd_id, device=self.device)
         return embed_model 
