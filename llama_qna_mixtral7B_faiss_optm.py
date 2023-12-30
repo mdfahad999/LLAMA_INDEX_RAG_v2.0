@@ -336,6 +336,11 @@ class LLama_Index_qna:
 # query_engine = custom_llm_index.as_query_engine(text_qa_template=qa_template)
         
 if __name__ == '__main__':
+    """Defines a list of sample questions to query the LLama index
+    Creates an instance of the LLamaIndexQNA class 
+    Calls the qna() method on the LLamaIndexQNA instance to query the index
+    Passes the sample questions list and specified vectorstore to the qna() method
+    The qna() method handles querying the index and returning responses for the given questions"""
     Questions =["when did NASA  established the Planetary Defense Coordination Office?",'Summarize the given documents']
     llama_obj=LLama_Index_qna()
     #llama_obj.creating_index()
