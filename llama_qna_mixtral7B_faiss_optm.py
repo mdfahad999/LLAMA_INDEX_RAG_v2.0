@@ -268,8 +268,10 @@ class LLama_Index_qna:
             index=ChromaDBVectorizer().load_from_index()     
         else:    
             index =self.creating_index()
-        qa_template=self.qna_template()     
-        query_engine = index.as_query_engine(k=6,qa_template=qa_template)
+        qa_template=self.qna_template()    
+        ## Using Hybrid search , but hybrid search is present in weaviate and qdrant not in faiss or not sure about  chroma
+        kwargs = {"similarity_top_k": 4, "vector_store_query_mode": 'hybrid','alpha':1,'qa_template':qa_template}
+        query_engine = index.as_query_engine(**kwargs)
         print(Text.BOLD_START+Text.RED +'query_engine!@@@@@::' +Text.END )
         print('',query_engine)
         if not isinstance(Questions,list):
@@ -336,11 +338,6 @@ class LLama_Index_qna:
 # query_engine = custom_llm_index.as_query_engine(text_qa_template=qa_template)
         
 if __name__ == '__main__':
-    """Defines a list of sample questions to query the LLama index
-    Creates an instance of the LLamaIndexQNA class 
-    Calls the qna() method on the LLamaIndexQNA instance to query the index
-    Passes the sample questions list and specified vectorstore to the qna() method
-    The qna() method handles querying the index and returning responses for the given questions"""
     Questions =["when did NASA  established the Planetary Defense Coordination Office?",'Summarize the given documents']
     llama_obj=LLama_Index_qna()
     #llama_obj.creating_index()
