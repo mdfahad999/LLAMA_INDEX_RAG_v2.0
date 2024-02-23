@@ -27,6 +27,6 @@ docker run -p 8000:8000 chromadb/chroma
 
 ## 💻 Run Mistral 7B Model
 ```
-python3  llama_qna_mistral7B_faiss_optm.py
+python3  llama_qna_mistral7B__optm.py
 ```
 Feel free to follow these instructions to set up and run LLama_Index_RAG efficiently.
