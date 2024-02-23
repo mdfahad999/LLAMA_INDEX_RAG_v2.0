@@ -1,4 +1,4 @@
-streamlit
+#streamlit
 #streamlit-pills
 llama-index==0.9.7
 llama-hub==0.0.44
