@@ -6,5 +6,5 @@ transformers
 # NOTE: this is due to a trivial dependency in the web tool, will refactor
 langchain==0.0.305
 pypdf
-faiss-cpu
+faiss-gpu
 llama-cpp-python
